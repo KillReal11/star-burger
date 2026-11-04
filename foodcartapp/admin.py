@@ -121,7 +121,7 @@ class OrderAdmin(admin.ModelAdmin):
         "address",
         "created_at",
     )
-    list_filter = ("created_at",)
+    list_filter = ("created_at", "phonenumber")
     search_fields = ("first_name", "last_name", "address")
     readonly_fields = ("created_at",)
     ordering = ["-created_at"]
