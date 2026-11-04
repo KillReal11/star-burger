@@ -1,12 +1,11 @@
-import json
-
 from django.http import JsonResponse
 from django.templatetags.static import static
 
-from phonenumber_field.phonenumber import PhoneNumber
+from phonenumber_field.modelfields import PhoneNumberField
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.serializers import CharField, ModelSerializer
 
 from .models import Order, OrderItem, Product
 
@@ -73,41 +72,43 @@ def product_list_api(request):
     )
 
 
+class OrderItemSerializer(ModelSerializer):
+    class Meta:
+        model = OrderItem
+        fields = ['product', 'quantity']
+
+
+class OrderSerializer(ModelSerializer):
+    firstname = CharField(source='first_name')
+    lastname = CharField(source='last_name')
+    phonenumber = PhoneNumberField(region='RU')
+    products = OrderItemSerializer(many=True, allow_empty=False)
+
+    class Meta:
+        model = Order
+        fields = ['firstname', 'lastname', 'phonenumber', 'address', 'products']
+
+
 @api_view(["POST"])
 def register_order(request):
-    data = request.data
-    products = data.get("products")
-
-    if not isinstance(products, list) or not products:
-        return Response({"error": "Поле products должно быть непустым списком"}, status=400)
-
-    for order_field in ('firstname', 'lastname', 'phonenumber', 'address'):
-        order_field_value = data.get(order_field)
-        if not isinstance(order_field_value, str) or not order_field_value.strip():
-            return Response({"error": f"Поле {order_field} обязательно и должно быть непустой строкой"}, status=400)
-
-    phonenumber = PhoneNumber.from_string(data.get("phonenumber"), region='RU')
-    if not phonenumber.is_valid():
-        return Response({"error": "Некорректный номер телефона"}, status=400)
-
-    products_ids = {product.get("product") for product in products}
-    found_products = Product.objects.in_bulk(products_ids)
-    missing_products = products_ids - found_products.keys()
-    if missing_products:
-        return Response({"error": f"Заказ с неcуществующим id продукта: {sorted(missing_products)}"}, status=400)
+    serializer = OrderSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
 
     order = Order.objects.create(
-        first_name=data["firstname"],
-        last_name=data["lastname"],
-        phonenumber=data["phonenumber"],
-        address=data["address"],
+        first_name=serializer.validated_data["first_name"],
+        last_name=serializer.validated_data["last_name"],
+        phonenumber=serializer.validated_data["phonenumber"],
+        address=serializer.validated_data["address"],
     )
-    for item in data["products"]:
-        product = Product.objects.get(pk=item["product"])
-        OrderItem.objects.create(
+
+    positions = serializer.validated_data["products"]
+    OrderItem.objects.bulk_create([
+        OrderItem(
             order=order,
-            product=product,
-            quantity=item["quantity"],
-            price=product.price,
+            product=position['product'],
+            quantity=position['quantity'],
+            price=position['product'].price,
         )
+        for position in positions
+    ])
     return Response({"id": order.id}, status=201)
