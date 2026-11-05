@@ -82,11 +82,11 @@ class OrderSerializer(ModelSerializer):
     firstname = CharField(source='first_name')
     lastname = CharField(source='last_name')
     phonenumber = PhoneNumberField(region='RU')
-    products = OrderItemSerializer(many=True, allow_empty=False)
+    products = OrderItemSerializer(many=True, allow_empty=False, write_only=True)
 
     class Meta:
         model = Order
-        fields = ['firstname', 'lastname', 'phonenumber', 'address', 'products']
+        fields = ['id', 'firstname', 'lastname', 'phonenumber', 'address', 'products']
 
 
 @api_view(["POST"])
@@ -111,4 +111,5 @@ def register_order(request):
         )
         for position in positions
     ])
-    return Response({"id": order.id}, status=201)
+
+    return Response(OrderSerializer(order).data, status=201)
