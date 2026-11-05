@@ -106,6 +106,7 @@ def view_orders(request):
         Order.objects
         .prefetch_related("items__product")
         .order_by("-created_at")
+        .get_total_cost()
     )
     return render(
         request,
