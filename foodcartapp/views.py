@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.http import JsonResponse
 from django.templatetags.static import static
 
@@ -93,23 +94,24 @@ class OrderSerializer(ModelSerializer):
 def register_order(request):
     serializer = OrderSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-
-    order = Order.objects.create(
-        first_name=serializer.validated_data["first_name"],
-        last_name=serializer.validated_data["last_name"],
-        phonenumber=serializer.validated_data["phonenumber"],
-        address=serializer.validated_data["address"],
-    )
-
     positions = serializer.validated_data["products"]
-    OrderItem.objects.bulk_create([
-        OrderItem(
-            order=order,
-            product=position['product'],
-            quantity=position['quantity'],
-            price=position['product'].price,
+
+    with transaction.atomic():
+        order = Order.objects.create(
+            first_name=serializer.validated_data["first_name"],
+            last_name=serializer.validated_data["last_name"],
+            phonenumber=serializer.validated_data["phonenumber"],
+            address=serializer.validated_data["address"],
         )
-        for position in positions
-    ])
+
+        OrderItem.objects.bulk_create([
+            OrderItem(
+                order=order,
+                product=position['product'],
+                quantity=position['quantity'],
+                price=position['product'].price,
+            )
+            for position in positions
+        ])
 
     return Response(OrderSerializer(order).data, status=201)
