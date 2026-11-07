@@ -116,6 +116,12 @@ class Order(models.Model):
         ("delivering", "Доставляется"),
         ("completed", "Завершен"),
     ]
+    PAYMENT_METHODS = [
+        ("unspecified", "Не указан"),
+        ("online", "Онлайн"),
+        ("cash", "Наличными"),
+    ]
+
     first_name = models.CharField("Имя клиента", max_length=100)
     last_name = models.CharField("Фамилия клиента", max_length=100)
     phonenumber = PhoneNumberField("Телефон клиента", region="RU", db_index=True)
@@ -131,7 +137,13 @@ class Order(models.Model):
         default="new",
         db_index=True,
     )
-
+    payment_method = models.CharField(
+        "Способ оплаты",
+        max_length=20,
+        choices=PAYMENT_METHODS,
+        default="unspecified",
+        db_index=True,
+    )
     objects = OrderQuerySet.as_manager()
 
     class Meta:

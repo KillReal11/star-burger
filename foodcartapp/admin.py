@@ -117,6 +117,7 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "status",
+        "payment_method",
         "first_name",
         "last_name",
         "phonenumber",
@@ -125,7 +126,7 @@ class OrderAdmin(admin.ModelAdmin):
         "called_at",
         "delivered_at",
     )
-    list_filter = ("status", "created_at",)
+    list_filter = ("status", "created_at", "payment_method",)
     search_fields = ("first_name", "last_name", "address")
     readonly_fields = ("created_at",)
     ordering = ["-created_at"]
