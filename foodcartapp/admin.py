@@ -116,13 +116,16 @@ class ProductAdmin(admin.ModelAdmin):
 class OrderAdmin(admin.ModelAdmin):
     list_display = (
         "id",
+        "status",
         "first_name",
         "last_name",
         "phonenumber",
         "address",
         "created_at",
+        "called_at",
+        "delivered_at",
     )
-    list_filter = ("created_at", "phonenumber")
+    list_filter = ("status", "created_at",)
     search_fields = ("first_name", "last_name", "address")
     readonly_fields = ("created_at",)
     ordering = ["-created_at"]
