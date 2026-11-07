@@ -120,6 +120,7 @@ class Order(models.Model):
     phonenumber = PhoneNumberField("Телефон клиента", region="RU", db_index=True)
     address = models.TextField("Адрес доставки")
     created_at = models.DateTimeField("Дата создания", auto_now_add=True, db_index=True)
+    comment = models.TextField("Комментарии к заказу", blank=True)
     status = models.CharField(
         "Статус заказа",
         max_length=40,
