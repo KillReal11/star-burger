@@ -104,6 +104,7 @@ def view_restaurants(request):
 def view_orders(request):
     orders = (
         Order.objects
+        .exclude(status="completed")
         .prefetch_related("items__product")
         .order_by("-created_at")
         .get_total_cost()

@@ -109,11 +109,24 @@ class OrderQuerySet(models.QuerySet):
 
 
 class Order(models.Model):
+    STATUS = [
+        ("new", "Требует подтверждения"),
+        ("cooking", "Готовится"),
+        ("delivering", "Доставляется"),
+        ("completed", "Завершен"),
+    ]
     first_name = models.CharField("Имя клиента", max_length=100)
     last_name = models.CharField("Фамилия клиента", max_length=100)
     phonenumber = PhoneNumberField("Телефон клиента", region="RU", db_index=True)
     address = models.TextField("Адрес доставки")
     created_at = models.DateTimeField("Дата создания", auto_now_add=True, db_index=True)
+    status = models.CharField(
+        "Статус заказа",
+        max_length=40,
+        choices=STATUS,
+        default="new",
+        db_index=True,
+    )
 
     objects = OrderQuerySet.as_manager()
 
