@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from django import forms
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
@@ -6,7 +8,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views import View
 
-from foodcartapp.models import Product, Restaurant, Order
+from foodcartapp.models import Product, Restaurant, Order, RestaurantMenuItem, OrderItem
 
 
 class Login(forms.Form):
@@ -100,15 +102,36 @@ def view_restaurants(request):
     )
 
 
+def get_restaurants_by_product():
+    menu_items = (
+        RestaurantMenuItem.objects
+        .filter(availability=True)
+        .select_related("restaurant")
+    )
+    restaurants_by_product = defaultdict(set)
+    for menu_item in menu_items:
+        restaurants_by_product[menu_item.product_id].add(menu_item.restaurant)
+    return restaurants_by_product
+
+
 @user_passes_test(is_manager, login_url="restaurateur:login")
 def view_orders(request):
-    orders = (
+    orders = list(
         Order.objects
         .exclude(status="completed")
         .prefetch_related("items__product")
-        .order_by("-created_at")
         .get_total_cost()
+        .by_status_priority()
     )
+
+    restaurants_by_product = get_restaurants_by_product()
+
+    for order in orders:
+        restaurants_for_order = [
+            restaurants_by_product[item.product_id] for item in order.items.all()
+        ]
+        order.available_restaurants = set.intersection(*restaurants_for_order) if restaurants_for_order else set()
+
     return render(
         request,
         template_name="order_items.html",

@@ -1,6 +1,6 @@
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.db.models import F, Sum
+from django.db.models import F, Case, IntegerField, Sum, Value, When
 from django.utils import timezone
 from phonenumber_field.modelfields import PhoneNumberField
 
@@ -108,6 +108,18 @@ class OrderQuerySet(models.QuerySet):
             total_cost=Sum(F("items__price") * F("items__quantity"))
         )
 
+    def by_status_priority(self):
+        return self.annotate(
+            status_priority=Case(
+                When(status="new", then=Value(0)),
+                When(status="cooking", then=Value(1)),
+                When(status="delivering", then=Value(2)),
+                When(status="completed", then=Value(3)),
+                default=Value(4),
+                output_field=IntegerField(),
+            )
+        ).order_by("status_priority", "-created_at")
+
 
 class Order(models.Model):
     STATUS = [
@@ -143,6 +155,14 @@ class Order(models.Model):
         choices=PAYMENT_METHODS,
         default="unspecified",
         db_index=True,
+    )
+    restaurant = models.ForeignKey(
+        Restaurant,
+        verbose_name="Ресторан - исполнитель",
+        related_name="orders",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
     )
     objects = OrderQuerySet.as_manager()
 
