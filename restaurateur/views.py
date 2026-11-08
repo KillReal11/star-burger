@@ -9,7 +9,8 @@ from django.urls import reverse_lazy
 from django.views import View
 
 from foodcartapp.models import Product, Restaurant, Order, RestaurantMenuItem
-from foodcartapp.geo import fetch_coordinates, get_restaurants_with_distance
+
+from places.geo import get_coordinates_by_address, get_restaurants_with_distance
 
 
 class Login(forms.Form):
@@ -115,6 +116,13 @@ def get_restaurants_by_product():
     return restaurants_by_product
 
 
+def get_available_restaurants(order, restaurants_by_product):
+    restaurants_for_order = [
+        restaurants_by_product[item.product_id] for item in order.items.all()
+    ]
+    return set.intersection(*restaurants_for_order) if restaurants_for_order else set()
+
+
 @user_passes_test(is_manager, login_url="restaurateur:login")
 def view_orders(request):
     orders = list(
@@ -128,22 +136,26 @@ def view_orders(request):
 
     restaurants_by_product = get_restaurants_by_product()
 
+    orders_to_assign = []
     for order in orders:
-        if order.restaurant_id:
-            continue 
-        restaurants_for_order = [
-            restaurants_by_product[item.product_id] for item in order.items.all()
-        ]
-        available_restaurants = set.intersection(*restaurants_for_order) if restaurants_for_order else set()
-
         order.coordinates_error = False
-        if not available_restaurants:
+        if order.restaurant_id:
             continue
+        available_restaurants = get_available_restaurants(order, restaurants_by_product)
+        if available_restaurants:
+            orders_to_assign.append((order, available_restaurants))
 
-        order_coordinates = fetch_coordinates(order.address)
+    addresses = {order.address for order, _ in orders_to_assign}
+
+    for _, restaurants in orders_to_assign:
+        addresses.update(restaurant.address for restaurant in restaurants)
+    coordinates = get_coordinates_by_address(addresses)
+
+    for order, restaurants in orders_to_assign:
+        order_coordinates = coordinates.get(order.address)
         order.coordinates_error = order_coordinates is None
         order.available_restaurants_with_distance = get_restaurants_with_distance(
-            order_coordinates, available_restaurants
+            order_coordinates, restaurants, coordinates
         )
     return render(
         request,
