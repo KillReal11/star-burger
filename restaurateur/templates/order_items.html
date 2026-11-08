@@ -38,17 +38,25 @@
         <td>
           {% if item.restaurant %}
             Готовит {{ item.restaurant.name }}
-          {% elif item.available_restaurants %}
+
+          {% elif not item.available_restaurants_with_distance %}
+            Нет ресторана, где есть все товары заказа
+
+          {% else %}
             <details>
               <summary>Может быть приготовлен ресторанами:</summary>
+              {% if item.coordinates_error %}
+                <p class="text-danger"> Ошибка определения координат адреса клиента</p>
+              {% endif %}
               <ul>
-                {% for restaurant in item.available_restaurants %}
-                  <li>{{ restaurant.name }}</li>
+                {% for restaurant in item.available_restaurants_with_distance %}
+                  <li>
+                    {{ restaurant.name }}
+                    {% if restaurant.distance is not None %}— {{ restaurant.distance|floatformat:2 }} км{% endif %}
+                  </li>
                 {% endfor %}
               </ul>
             </details>
-          {% else %}
-            Нет ресторана, где есть все товары заказа
           {% endif %}
         </td>
         <td><a href="{% url 'admin:foodcartapp_order_change' item.id %}?next={{ request.get_full_path|urlencode }}">Редактировать</a></td>

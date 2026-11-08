@@ -8,7 +8,8 @@ from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views import View
 
-from foodcartapp.models import Product, Restaurant, Order, RestaurantMenuItem, OrderItem
+from foodcartapp.models import Product, Restaurant, Order, RestaurantMenuItem
+from foodcartapp.geo import fetch_coordinates, get_restaurants_with_distance
 
 
 class Login(forms.Form):
@@ -119,6 +120,7 @@ def view_orders(request):
     orders = list(
         Order.objects
         .exclude(status="completed")
+        .select_related("restaurant")
         .prefetch_related("items__product")
         .get_total_cost()
         .by_status_priority()
@@ -127,11 +129,22 @@ def view_orders(request):
     restaurants_by_product = get_restaurants_by_product()
 
     for order in orders:
+        if order.restaurant_id:
+            continue 
         restaurants_for_order = [
             restaurants_by_product[item.product_id] for item in order.items.all()
         ]
-        order.available_restaurants = set.intersection(*restaurants_for_order) if restaurants_for_order else set()
+        available_restaurants = set.intersection(*restaurants_for_order) if restaurants_for_order else set()
 
+        order.coordinates_error = False
+        if not available_restaurants:
+            continue
+
+        order_coordinates = fetch_coordinates(order.address)
+        order.coordinates_error = order_coordinates is None
+        order.available_restaurants_with_distance = get_restaurants_with_distance(
+            order_coordinates, available_restaurants
+        )
     return render(
         request,
         template_name="order_items.html",
