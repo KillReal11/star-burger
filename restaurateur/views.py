@@ -8,8 +8,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views import View
 
-from foodcartapp.models import Product, Restaurant, Order, RestaurantMenuItem
-
+from foodcartapp.models import Order, Product, Restaurant, RestaurantMenuItem
 from places.geo import get_coordinates_by_address, get_restaurants_with_distance
 
 
@@ -105,11 +104,7 @@ def view_restaurants(request):
 
 
 def get_restaurants_by_product():
-    menu_items = (
-        RestaurantMenuItem.objects
-        .filter(availability=True)
-        .select_related("restaurant")
-    )
+    menu_items = RestaurantMenuItem.objects.filter(availability=True).select_related("restaurant")
     restaurants_by_product = defaultdict(set)
     for menu_item in menu_items:
         restaurants_by_product[menu_item.product_id].add(menu_item.restaurant)
@@ -117,17 +112,14 @@ def get_restaurants_by_product():
 
 
 def get_available_restaurants(order, restaurants_by_product):
-    restaurants_for_order = [
-        restaurants_by_product[item.product_id] for item in order.items.all()
-    ]
+    restaurants_for_order = [restaurants_by_product[item.product_id] for item in order.items.all()]
     return set.intersection(*restaurants_for_order) if restaurants_for_order else set()
 
 
 @user_passes_test(is_manager, login_url="restaurateur:login")
 def view_orders(request):
     orders = list(
-        Order.objects
-        .exclude(status="completed")
+        Order.objects.exclude(status="completed")
         .select_related("restaurant")
         .prefetch_related("items__product")
         .get_total_cost()

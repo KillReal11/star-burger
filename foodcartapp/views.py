@@ -1,9 +1,7 @@
 from django.db import transaction
 from django.http import JsonResponse
 from django.templatetags.static import static
-
 from phonenumber_field.modelfields import PhoneNumberField
-
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.serializers import CharField, ModelSerializer
@@ -76,18 +74,18 @@ def product_list_api(request):
 class OrderItemSerializer(ModelSerializer):
     class Meta:
         model = OrderItem
-        fields = ['product', 'quantity']
+        fields = ["product", "quantity"]
 
 
 class OrderSerializer(ModelSerializer):
-    firstname = CharField(source='first_name')
-    lastname = CharField(source='last_name')
-    phonenumber = PhoneNumberField(region='RU')
+    firstname = CharField(source="first_name")
+    lastname = CharField(source="last_name")
+    phonenumber = PhoneNumberField(region="RU")
     products = OrderItemSerializer(many=True, allow_empty=False, write_only=True)
 
     class Meta:
         model = Order
-        fields = ['id', 'firstname', 'lastname', 'phonenumber', 'address', 'products']
+        fields = ["id", "firstname", "lastname", "phonenumber", "address", "products"]
 
 
 @api_view(["POST"])
@@ -104,14 +102,16 @@ def register_order(request):
             address=serializer.validated_data["address"],
         )
 
-        OrderItem.objects.bulk_create([
-            OrderItem(
-                order=order,
-                product=position['product'],
-                quantity=position['quantity'],
-                price=position['product'].price,
-            )
-            for position in positions
-        ])
+        OrderItem.objects.bulk_create(
+            [
+                OrderItem(
+                    order=order,
+                    product=position["product"],
+                    quantity=position["quantity"],
+                    price=position["product"].price,
+                )
+                for position in positions
+            ]
+        )
 
     return Response(OrderSerializer(order).data, status=201)

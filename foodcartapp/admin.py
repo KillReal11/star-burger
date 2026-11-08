@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.shortcuts import reverse, redirect
+from django.shortcuts import redirect, reverse
 from django.templatetags.static import static
 from django.utils.html import format_html
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -126,7 +126,11 @@ class OrderAdmin(admin.ModelAdmin):
         "called_at",
         "delivered_at",
     )
-    list_filter = ("status", "created_at", "payment_method",)
+    list_filter = (
+        "status",
+        "created_at",
+        "payment_method",
+    )
     search_fields = ("first_name", "last_name", "address")
     readonly_fields = ("created_at",)
     ordering = ["-created_at"]

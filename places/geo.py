@@ -31,10 +31,7 @@ def fetch_coordinates(address):
 
 def get_coordinates_by_address(addresses):
     addresses = {address for address in addresses if address}
-    places = {
-        place.address: place
-        for place in Place.objects.filter(address__in=addresses)
-    }
+    places = {place.address: place for place in Place.objects.filter(address__in=addresses)}
 
     new_places = []
     for address in addresses - places.keys():

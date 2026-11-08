@@ -1,6 +1,6 @@
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.db.models import F, Case, IntegerField, Sum, Value, When
+from django.db.models import Case, F, IntegerField, Sum, Value, When
 from django.utils import timezone
 from phonenumber_field.modelfields import PhoneNumberField
 
@@ -104,9 +104,7 @@ class RestaurantMenuItem(models.Model):
 
 class OrderQuerySet(models.QuerySet):
     def get_total_cost(self):
-        return self.annotate(
-            total_cost=Sum(F("items__price") * F("items__quantity"))
-        )
+        return self.annotate(total_cost=Sum(F("items__price") * F("items__quantity")))
 
     def by_status_priority(self):
         return self.annotate(
