@@ -135,7 +135,7 @@ class Order(models.Model):
     first_name = models.CharField("Имя клиента", max_length=100)
     last_name = models.CharField("Фамилия клиента", max_length=100)
     phonenumber = PhoneNumberField("Телефон клиента", region="RU", db_index=True)
-    address = models.TextField("Адрес доставки")
+    address = models.CharField("Адрес доставки", max_length=255)
     created_at = models.DateTimeField("Дата создания", default=timezone.now, db_index=True)
     comment = models.TextField("Комментарии к заказу", blank=True)
     called_at = models.DateTimeField("Звонок в", null=True, blank=True, db_index=True)

@@ -80,7 +80,6 @@ class OrderItemSerializer(ModelSerializer):
 class OrderSerializer(ModelSerializer):
     firstname = CharField(source="first_name")
     lastname = CharField(source="last_name")
-    phonenumber = PhoneNumberField(region="RU")
     products = OrderItemSerializer(many=True, allow_empty=False, write_only=True)
 
     class Meta:

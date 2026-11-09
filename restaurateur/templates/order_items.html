@@ -33,7 +33,13 @@
         <td>{{ item.total_cost}} руб.</td>
         <td>{{ item.first_name }} {{ item.last_name }}</td>
         <td>{{ item.phonenumber }}</td>
-        <td>{{ item.address }}</td>
+        <td>
+          {% if item.coordinates_error %}
+            <p class="text-danger"> Адрес не найден</p>
+          {% else %}
+            {{ item.address }}
+          {% endif %}
+        </td>
         <td>{{ item.comment }}</td>
         <td>
           {% if item.restaurant %}
@@ -45,9 +51,6 @@
           {% else %}
             <details>
               <summary>Может быть приготовлен ресторанами:</summary>
-              {% if item.coordinates_error %}
-                <p class="text-danger"> Ошибка определения координат адреса клиента</p>
-              {% endif %}
               <ul>
                 {% for restaurant in item.available_restaurants_with_distance %}
                   <li>
